@@ -7,6 +7,7 @@ import {
   defaultDateRange,
   fillWorkingDays,
   monthRange,
+  canShiftNext,
   shiftMonth,
   shiftWeek,
   weekRange,
@@ -117,15 +118,20 @@ export default function Page() {
 
   function shiftPeriod(delta: number) {
     if (period === "week") {
+      if (delta > 0 && !canShiftNext("week", from)) return;
       const next = shiftWeek(from, delta);
       applyRange(next.from, next.to, "week");
       return;
     }
     if (period === "month") {
+      if (delta > 0 && !canShiftNext("month", from)) return;
       const next = shiftMonth(from, delta);
       applyRange(next.from, next.to, "month");
     }
   }
+
+  const nextEnabled =
+    (period === "week" || period === "month") && canShiftNext(period, from);
 
   const when = data
     ? `${data.rangeLabel} · ${data.usedRows} lines · ${laneLabel(data.tab)} · ${data.source === "google" ? "live" : "file"}`
@@ -221,7 +227,12 @@ export default function Page() {
             <button type="button" onClick={() => shiftPeriod(-1)} aria-label={period === "week" ? "Previous week" : "Previous month"}>
               Previous
             </button>
-            <button type="button" onClick={() => shiftPeriod(1)} aria-label={period === "week" ? "Next week" : "Next month"}>
+            <button
+              type="button"
+              onClick={() => shiftPeriod(1)}
+              disabled={!nextEnabled}
+              aria-label={period === "week" ? "Next week" : "Next month"}
+            >
               Next
             </button>
           </span>

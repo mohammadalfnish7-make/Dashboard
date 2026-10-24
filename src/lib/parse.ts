@@ -214,10 +214,15 @@ export function defaultDateRange(days = 30): { from: string; to: string } {
   return { from: isoDate(from), to: isoDate(to) };
 }
 
+function clampToToday(to: string): string {
+  const today = isoDate(new Date());
+  return to > today ? today : to;
+}
+
 export function monthRange(anchor: Date = new Date()): { from: string; to: string } {
   const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
-  return { from: isoDate(start), to: isoDate(last) };
+  return { from: isoDate(start), to: clampToToday(isoDate(last)) };
 }
 
 export function weekRange(anchor: Date = new Date()): { from: string; to: string } {
@@ -228,18 +233,34 @@ export function weekRange(anchor: Date = new Date()): { from: string; to: string
   monday.setDate(date.getDate() + (weekday === 0 ? -6 : 1 - weekday));
   const saturday = new Date(monday);
   saturday.setDate(monday.getDate() + 5);
-  return { from: isoDate(monday), to: isoDate(saturday) };
+  return { from: isoDate(monday), to: clampToToday(isoDate(saturday)) };
 }
 
 export function shiftMonth(from: string, delta: number): { from: string; to: string } {
   const date = parseLocal(from);
-  return monthRange(new Date(date.getFullYear(), date.getMonth() + delta, 1));
+  const next = monthRange(new Date(date.getFullYear(), date.getMonth() + delta, 1));
+  if (delta > 0) {
+    const current = monthRange();
+    if (next.from > current.from) return current;
+  }
+  return next;
 }
 
 export function shiftWeek(from: string, delta: number): { from: string; to: string } {
   const date = parseLocal(from);
   date.setDate(date.getDate() + delta * 7);
-  return weekRange(date);
+  const next = weekRange(date);
+  if (delta > 0) {
+    const current = weekRange();
+    if (next.from > current.from) return current;
+  }
+  return next;
+}
+
+/** True when Next would leave the current week/month that contains today. */
+export function canShiftNext(period: "month" | "week", from: string): boolean {
+  const current = period === "week" ? weekRange() : monthRange();
+  return from < current.from;
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

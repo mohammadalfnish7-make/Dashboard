@@ -137,6 +137,11 @@ input {
   border-color: var(--brand);
 }
 
+.grain-nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .range button,
 .tabs button,
 .setup button,
