@@ -152,9 +152,9 @@ function pickShop(primary: unknown, fallback: unknown, shipment: string): string
   );
 }
 
-/** Pure digit marks get a TL prefix: 5544 → TL5544. EM/MO codes stay as-is. */
+/** Pure digit marks get a TL prefix: 5544 → TL-5544. EM/MO codes stay as-is. */
 function withTlPrefix(code: string): string {
-  return /^\d+$/.test(code) ? `TL${code}` : code;
+  return /^\d+$/.test(code) ? `TL-${code}` : code;
 }
 
 /** Customer-column mark codes: digits, EM*, MO*, and Excel date-coerced numbers. */

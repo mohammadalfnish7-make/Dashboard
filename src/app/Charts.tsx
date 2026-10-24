@@ -20,18 +20,18 @@ export function formatKg(value: number): string {
   return `${value.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg`;
 }
 
-/** Brand-colored mark first, then shop name: TL8800 · WADI SIJI */
+/** Mark as a blue pill (like Warehouse tab), then shop name. */
 export function MarkLabel({ value }: { value: string }) {
   const sep = " · ";
   const index = value.indexOf(sep);
   if (index < 0) {
-    const looksLikeCode = value !== "UNMARKED" && /^[A-Z]{1,3}\d/.test(value);
+    const looksLikeCode = value !== "UNMARKED" && /^[A-Z]{1,3}-?\d/.test(value);
     return looksLikeCode ? <span className="mark-code">{value}</span> : <>{value}</>;
   }
   return (
     <>
       <span className="mark-code">{value.slice(0, index)}</span>
-      {sep}
+      {" "}
       {value.slice(index + sep.length)}
     </>
   );
