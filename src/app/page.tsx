@@ -15,6 +15,7 @@ import {
 import type { SheetPayload, SheetRow } from "@/lib/types";
 
 const STORAGE_KEY = "karam.googleSheetUrl";
+const LINES_KEY = "karam.showLineCharts";
 
 const LANES = [
   { id: "all", label: "All" },
@@ -47,14 +48,24 @@ export default function Page() {
   const [from, setFrom] = useState(defaults.from);
   const [to, setTo] = useState(defaults.to);
   const [period, setPeriod] = useState<Period>("custom");
+  const [showLineCharts, setShowLineCharts] = useState(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY) ?? "";
     setUrl(saved);
+    setShowLineCharts(window.localStorage.getItem(LINES_KEY) === "1");
     void load(saved, "all", from, to);
     // First paint uses last-30-days defaults; later changes go through applyRange.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function toggleLineCharts() {
+    setShowLineCharts((current) => {
+      const next = !current;
+      window.localStorage.setItem(LINES_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
 
   async function load(
     nextUrl: string,
@@ -276,16 +287,30 @@ export default function Page() {
           <button type="button" className={view === "details" ? "active" : undefined} onClick={() => setView("details")}>
             Details
           </button>
+          {view === "charts" ? (
+            <button
+              type="button"
+              className={showLineCharts ? "active" : undefined}
+              onClick={toggleLineCharts}
+              aria-pressed={showLineCharts}
+            >
+              {showLineCharts ? "Hide lines" : "Show lines"}
+            </button>
+          ) : null}
         </span>
       </nav>
 
       {data ? (
         <>
-          {topic === "warehouse" ? <WarehouseTab data={data} view={view} /> : null}
+          {topic === "warehouse" ? <WarehouseTab data={data} view={view} showLineCharts={showLineCharts} /> : null}
           {topic === "received" ? <ReceivedTab data={data} view={view} when={when} period={period} /> : null}
-          {topic === "deliveries" ? <DeliveriesTab data={data} view={view} when={when} period={period} /> : null}
+          {topic === "deliveries" ? (
+            <DeliveriesTab data={data} view={view} when={when} period={period} showLineCharts={showLineCharts} />
+          ) : null}
           {topic === "marks" ? <MarksTab data={data} view={view} when={when} /> : null}
-          {topic === "shipments" ? <ShipmentsTab data={data} view={view} when={when} /> : null}
+          {topic === "shipments" ? (
+            <ShipmentsTab data={data} view={view} when={when} showLineCharts={showLineCharts} />
+          ) : null}
           <p className="source">
             Source: {data.title}
             {loading ? " · refreshing…" : ""}
@@ -300,7 +325,15 @@ export default function Page() {
   );
 }
 
-function WarehouseTab({ data, view }: { data: SheetPayload; view: View }) {
+function WarehouseTab({
+  data,
+  view,
+  showLineCharts,
+}: {
+  data: SheetPayload;
+  view: View;
+  showLineCharts: boolean;
+}) {
   const wh = data.metrics.warehouse;
   if (view === "details") {
     return (
@@ -333,21 +366,25 @@ function WarehouseTab({ data, view }: { data: SheetPayload; view: View }) {
           when={`${data.rangeLabel} · SEA GOODS and AIR SHIPMENT`}
           items={wh.byLane.map((item) => ({ label: item.label, value: item.kg }))}
         />
-        <BarChart
-          title="Lines in warehouse, by mark"
-          when={`${data.rangeLabel} · ${wh.lines} lines`}
-          unit="rows"
-          items={wh.marks.filter((item) => item.label !== "Other").map((item) => ({
-            label: item.label,
-            value: item.rows,
-          }))}
-        />
-        <BarChart
-          title="Lines in warehouse, by lane"
-          when={`${data.rangeLabel} · SEA GOODS and AIR SHIPMENT`}
-          unit="rows"
-          items={wh.byLane.map((item) => ({ label: item.label, value: item.rows }))}
-        />
+        {showLineCharts ? (
+          <>
+            <BarChart
+              title="Lines in warehouse, by mark"
+              when={`${data.rangeLabel} · ${wh.lines} lines`}
+              unit="rows"
+              items={wh.marks.filter((item) => item.label !== "Other").map((item) => ({
+                label: item.label,
+                value: item.rows,
+              }))}
+            />
+            <BarChart
+              title="Lines in warehouse, by lane"
+              when={`${data.rangeLabel} · SEA GOODS and AIR SHIPMENT`}
+              unit="rows"
+              items={wh.byLane.map((item) => ({ label: item.label, value: item.rows }))}
+            />
+          </>
+        ) : null}
       </section>
     </>
   );
@@ -441,11 +478,13 @@ function DeliveriesTab({
   view,
   when,
   period,
+  showLineCharts,
 }: {
   data: SheetPayload;
   view: View;
   when: string;
   period: Period;
+  showLineCharts: boolean;
 }) {
   const delivered = data.rows.filter((row) => row.delivered);
   const days = useMemo(
@@ -488,12 +527,14 @@ function DeliveriesTab({
             { label: "Open", value: data.metrics.open },
           ]}
         />
-        <BarChart
-          title="Delivered lines, by mark"
-          when={when}
-          unit="rows"
-          items={byMark.map(([label, value]) => ({ label, value }))}
-        />
+        {showLineCharts ? (
+          <BarChart
+            title="Delivered lines, by mark"
+            when={when}
+            unit="rows"
+            items={byMark.map(([label, value]) => ({ label, value }))}
+          />
+        ) : null}
         <ColumnChart
           title={period === "week" ? "Lines in vs delivered, Mon–Sat" : "Lines in vs delivered, by day"}
           when={`By date received · ${when}`}
@@ -560,7 +601,17 @@ function MarksTab({ data, view, when }: { data: SheetPayload; view: View; when: 
   );
 }
 
-function ShipmentsTab({ data, view, when }: { data: SheetPayload; view: View; when: string }) {
+function ShipmentsTab({
+  data,
+  view,
+  when,
+  showLineCharts,
+}: {
+  data: SheetPayload;
+  view: View;
+  when: string;
+  showLineCharts: boolean;
+}) {
   if (view === "details") {
     return (
       <table className="details">
@@ -591,12 +642,14 @@ function ShipmentsTab({ data, view, when }: { data: SheetPayload; view: View; wh
         when={when}
         items={data.metrics.byShipment.map((item) => ({ label: item.label, value: item.kg }))}
       />
-      <BarChart
-        title="Lines on shipments that exist"
-        when={when}
-        unit="rows"
-        items={data.metrics.byShipment.map((item) => ({ label: item.label, value: item.rows }))}
-      />
+      {showLineCharts ? (
+        <BarChart
+          title="Lines on shipments that exist"
+          when={when}
+          unit="rows"
+          items={data.metrics.byShipment.map((item) => ({ label: item.label, value: item.rows }))}
+        />
+      ) : null}
     </section>
   );
 }
