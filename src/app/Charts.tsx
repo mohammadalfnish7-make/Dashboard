@@ -20,6 +20,23 @@ export function formatKg(value: number): string {
   return `${value.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg`;
 }
 
+/** Brand-colored mark first, then shop name: TL8800 · WADI SIJI */
+export function MarkLabel({ value }: { value: string }) {
+  const sep = " · ";
+  const index = value.indexOf(sep);
+  if (index < 0) {
+    const looksLikeCode = value !== "UNMARKED" && /^[A-Z]{1,3}\d/.test(value);
+    return looksLikeCode ? <span className="mark-code">{value}</span> : <>{value}</>;
+  }
+  return (
+    <>
+      <span className="mark-code">{value.slice(0, index)}</span>
+      {sep}
+      {value.slice(index + sep.length)}
+    </>
+  );
+}
+
 function formatAxisKg(value: number): string {
   if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)} t`;
   return `${Math.round(value)}`;
@@ -176,7 +193,9 @@ export function BarChart({
       <div className="hbar-list">
         {items.map((item) => (
           <div className="hbar" key={item.label}>
-            <div className="hbar-label">{item.label}</div>
+            <div className="hbar-label">
+              <MarkLabel value={item.label} />
+            </div>
             <div className="hbar-track">
               <div
                 className="hbar-fill"

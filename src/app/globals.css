@@ -533,6 +533,11 @@ svg {
   white-space: nowrap;
 }
 
+.mark-code {
+  color: var(--brand);
+  font-weight: 600;
+}
+
 .hbar-track {
   height: 10px;
   background: #e6efff;

@@ -185,8 +185,8 @@ export function formatMarkCode(value: unknown): string | null {
 }
 
 export function formatMarkLabel(shop: string | null, code: string | null): string {
-  if (shop && code) return `${shop} · ${code}`;
-  return shop || code || "UNMARKED";
+  if (shop && code) return `${code} · ${shop}`;
+  return code || shop || "UNMARKED";
 }
 
 export function parseSheetMatrix(matrix: unknown[][]): SheetRow[] {

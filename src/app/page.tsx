@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, ColumnChart, formatKg } from "./Charts";
+import { BarChart, ColumnChart, MarkLabel, formatKg } from "./Charts";
 import {
   dateKey,
   defaultDateRange,
@@ -529,7 +529,7 @@ function MarksTab({ data, view, when }: { data: SheetPayload; view: View; when: 
         <tbody>
           {data.metrics.marks.map((mark) => (
             <tr key={mark.mark}>
-              <td>{mark.mark}</td>
+              <td><MarkLabel value={mark.mark} /></td>
               <td className="num">{formatKg(mark.kg)}</td>
               <td className="num">{mark.rows}</td>
               <td className="num">{mark.deliveries}</td>
@@ -649,7 +649,7 @@ function DetailTable({
               <td>{row.date || "—"}</td>
               {extra ? <td>{row.lane || "—"}</td> : null}
               <td>{row.shipment || "—"}</td>
-              <td>{row.mark}</td>
+              <td><MarkLabel value={row.mark} /></td>
               <td className="num">{row.kg == null ? "—" : formatKg(row.kg)}</td>
               <td className="num">{row.cartons == null ? "—" : row.cartons}</td>
               <td>{row.status || "—"}</td>
