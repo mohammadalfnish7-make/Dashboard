@@ -1,0 +1,30 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Public HTTP for Coolify reverse proxy (domain → service frontend, port 3000).
+    # Do not publish a host port (conflicts with other apps / Coolify).
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      GOOGLE_SHEET_URL: ${GOOGLE_SHEET_URL:-}
+      AUTH_EMAIL: ${AUTH_EMAIL:-}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

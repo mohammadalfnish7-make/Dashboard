@@ -179,3 +179,10 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Node / Next.js dashboard
+node_modules/
+.next/
+out/
+.env.local
+next-env.d.ts
