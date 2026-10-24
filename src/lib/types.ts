@@ -2,6 +2,10 @@ export type SheetRow = {
   date: string;
   shipment: string;
   mark: string;
+  /** Raw Customer-column mark code (4455, EM5565, MO001), if present. */
+  markCode?: string;
+  /** Shop / company name without the mark code. */
+  shop?: string;
   kg: number | null;
   cartons: number | null;
   status: string;

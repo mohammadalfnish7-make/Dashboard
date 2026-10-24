@@ -16,6 +16,8 @@ const MARK_HEADERS = [
   "vendor",
 ];
 const MARK_FALLBACK = ["info / инфо", "info"];
+/** Load-plan Customer column: mark codes (4455, EM5565, MO001). */
+const CUSTOMER_HEADERS = ["customer"];
 const KG_HEADERS = ["net weight", "kgs", "wt(kg)", "gross weight"];
 const CARTON_HEADERS = ["number of cartons", "carton", "crtn", "cartons"];
 const STATUS_HEADERS = ["status", "stage", "comment"];
@@ -141,13 +143,50 @@ export function normalizeMark(value: unknown): string | null {
   return null;
 }
 
-function pickMark(primary: unknown, fallback: unknown, shipment: string): string {
+function pickShop(primary: unknown, fallback: unknown, shipment: string): string | null {
   return (
     normalizeMark(primary) ||
     aliasMark(fallback) ||
     aliasMark(shipment) ||
-    "UNMARKED"
+    null
   );
+}
+
+/** Pure digit marks get a TL prefix: 5544 → TL5544. EM/MO codes stay as-is. */
+function withTlPrefix(code: string): string {
+  return /^\d+$/.test(code) ? `TL${code}` : code;
+}
+
+/** Customer-column mark codes: digits, EM*, MO*, and Excel date-coerced numbers. */
+export function formatMarkCode(value: unknown): string | null {
+  if (empty(value)) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear();
+    // Excel often turns numeric marks like 4017 into bogus dates with that year.
+    if (year > 2100 && year < 100000) return withTlPrefix(String(year));
+    const serial = Math.round((value.getTime() - Date.UTC(1899, 11, 30)) / 86400000);
+    if (serial > 0 && serial < 100000) return withTlPrefix(String(serial));
+    return null;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return withTlPrefix(String(Math.trunc(value)));
+  }
+  let text = String(value).replace(/🚛/g, "").trim();
+  if (!text || /^\.+$/.test(text)) return null;
+  const dateLike = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateLike) {
+    const year = Number(dateLike[1]);
+    if (year > 2100 && year < 100000) return withTlPrefix(String(year));
+  }
+  text = text.replace(/\s+/g, " ").toUpperCase();
+  text = text.replace(/\(CHANGED\)/gi, "").trim();
+  if (!/[A-Z0-9]/.test(text)) return null;
+  return withTlPrefix(text);
+}
+
+export function formatMarkLabel(shop: string | null, code: string | null): string {
+  if (shop && code) return `${shop} · ${code}`;
+  return shop || code || "UNMARKED";
 }
 
 export function parseSheetMatrix(matrix: unknown[][]): SheetRow[] {
@@ -157,6 +196,7 @@ export function parseSheetMatrix(matrix: unknown[][]): SheetRow[] {
   const shipCol = findCol(headers, SHIP_HEADERS);
   const markCol = findCol(headers, MARK_HEADERS);
   const markFb = findCol(headers, MARK_FALLBACK);
+  const customerCol = findCol(headers, CUSTOMER_HEADERS);
   const kgCol = findCol(headers, KG_HEADERS);
   const ctnCol = findCol(headers, CARTON_HEADERS);
   const statusCol = findCol(headers, STATUS_HEADERS);
@@ -175,11 +215,15 @@ export function parseSheetMatrix(matrix: unknown[][]): SheetRow[] {
     const cartons = ctnCol >= 0 ? parseNumber(cells[ctnCol]) : null;
     const primary = markCol >= 0 ? cells[markCol] : null;
     const fallback = markFb >= 0 ? cells[markFb] : null;
+    const shop = pickShop(primary, fallback, shipment);
+    const markCode = customerCol >= 0 ? formatMarkCode(cells[customerCol]) : null;
     if (!shipment && !date && kg == null && !status) continue;
     rows.push({
       date,
       shipment,
-      mark: pickMark(primary, fallback, shipment),
+      shop: shop ?? undefined,
+      markCode: markCode ?? undefined,
+      mark: formatMarkLabel(shop, markCode),
       kg,
       cartons,
       status,
