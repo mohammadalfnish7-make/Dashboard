@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 
@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   title: "KARAM AL ARAB · Live ops",
   description: "Warehouse, deliveries, and shipments from the live sheet.",
   icons: { icon: "/favicon.png" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#eaf2ff",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

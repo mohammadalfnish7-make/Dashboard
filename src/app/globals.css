@@ -25,6 +25,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: Montserrat, sans-serif;
+  overflow-x: hidden;
 }
 
 button,
@@ -36,6 +37,7 @@ input {
   max-width: 1280px;
   margin: 0 auto;
   padding: 22px 24px 36px;
+  width: 100%;
 }
 
 .topbar {
@@ -360,20 +362,27 @@ input {
   gap: 12px;
 }
 
+.details-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--panel);
+}
+
 .details {
   width: 100%;
+  min-width: 560px;
   border-collapse: collapse;
   background: var(--panel);
   font-size: 13px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
 }
 
 .details caption {
   caption-side: top;
   text-align: left;
-  padding: 0 0 10px;
+  padding: 12px 12px 10px;
   font-size: 16px;
   font-weight: 600;
   color: var(--brand);
@@ -590,12 +599,23 @@ svg {
 }
 
 @media (max-width: 900px) {
+  .board {
+    padding: 16px 14px 28px;
+  }
+
   .topbar {
     border-radius: 22px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+  }
+
+  .mast {
+    margin-bottom: 14px;
   }
 
   .mast h1 {
-    font-size: 24px;
+    font-size: 22px;
+    max-width: none;
   }
 
   .grid3,
@@ -605,15 +625,181 @@ svg {
 
   .view-toggle {
     margin-left: 0;
+    width: 100%;
+  }
+
+  .view-toggle button {
+    flex: 1;
+  }
+
+  .topics {
+    gap: 6px;
+  }
+
+  svg {
+    height: 220px;
   }
 }
 
 @media (max-width: 640px) {
-  .kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .board {
+    padding: 12px 10px 24px;
   }
 
   .brand img {
-    height: 22px;
+    height: 20px;
+  }
+
+  .topbar-actions .ghost {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .mast h1 {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .who {
+    font-size: 11px;
+  }
+
+  .range {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .range label {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+  }
+
+  .range input[type="date"] {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .range > button,
+  .grain,
+  .grain-nav {
+    width: 100%;
+  }
+
+  .grain,
+  .grain-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .range button,
+  .topics > button,
+  .lanes > button,
+  .view-toggle button,
+  .tabs button,
+  .setup button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .kpis article {
+    padding: 12px;
+  }
+
+  .kpis .value {
+    font-size: 22px;
+  }
+
+  .kpis .label {
+    font-size: 11px;
+  }
+
+  .lanes,
+  .topics {
+    margin-bottom: 12px;
+  }
+
+  .hero,
+  .grid3 > .chart,
+  .grid2 > .chart {
+    padding: 12px;
+  }
+
+  .chart figcaption strong {
+    font-size: 14px;
+  }
+
+  .chart-legend {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .chart-legend .unit {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  svg {
+    height: 200px;
+  }
+
+  .hbar {
+    grid-template-columns: minmax(64px, 30%) 1fr 52px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .split-nums b {
+    font-size: 22px;
+  }
+
+  .details {
+    min-width: 520px;
+    font-size: 12px;
+  }
+
+  .details th,
+  .details td {
+    padding: 8px 10px;
+  }
+
+  .source {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .login {
+    padding: 16px;
+  }
+
+  .login-card {
+    padding: 22px 16px 18px;
+  }
+
+  .login-card h1 {
+    font-size: 24px;
+  }
+
+  .login-card input {
+    font-size: 16px;
+  }
+
+  .setup input {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .range label {
+    flex: 1 1 100%;
   }
 }

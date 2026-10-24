@@ -629,33 +629,35 @@ function DetailTable({
 }) {
   const ordered = [...rows].reverse();
   return (
-    <table className="details">
-      <caption>{caption}</caption>
-      <thead>
-        <tr>
-          <th>Date</th>
-          {extra ? <th>Lane</th> : null}
-          <th>Shipment</th>
-          <th>Mark</th>
-          <th className="num">Kg</th>
-          <th className="num">Cartons</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {ordered.map((row, index) => (
-          <tr key={`${row.lane}-${row.shipment}-${row.date}-${index}`}>
-            <td>{row.date || "—"}</td>
-            {extra ? <td>{row.lane || "—"}</td> : null}
-            <td>{row.shipment || "—"}</td>
-            <td>{row.mark}</td>
-            <td className="num">{row.kg == null ? "—" : formatKg(row.kg)}</td>
-            <td className="num">{row.cartons == null ? "—" : row.cartons}</td>
-            <td>{row.status || "—"}</td>
+    <div className="details-wrap">
+      <table className="details">
+        <caption>{caption}</caption>
+        <thead>
+          <tr>
+            <th>Date</th>
+            {extra ? <th>Lane</th> : null}
+            <th>Shipment</th>
+            <th>Mark</th>
+            <th className="num">Kg</th>
+            <th className="num">Cartons</th>
+            <th>Status</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {ordered.map((row, index) => (
+            <tr key={`${row.lane}-${row.shipment}-${row.date}-${index}`}>
+              <td>{row.date || "—"}</td>
+              {extra ? <td>{row.lane || "—"}</td> : null}
+              <td>{row.shipment || "—"}</td>
+              <td>{row.mark}</td>
+              <td className="num">{row.kg == null ? "—" : formatKg(row.kg)}</td>
+              <td className="num">{row.cartons == null ? "—" : row.cartons}</td>
+              <td>{row.status || "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
