@@ -15,6 +15,17 @@ services:
       AUTH_EMAIL: ${AUTH_EMAIL:-}
       AUTH_PASSWORD: ${AUTH_PASSWORD:-}
       AUTH_SECRET: ${AUTH_SECRET:-}
+      MAYTAPI_PRODUCT_ID: ${MAYTAPI_PRODUCT_ID:-}
+      MAYTAPI_TOKEN: ${MAYTAPI_TOKEN:-}
+      MAYTAPI_PHONE_ID: ${MAYTAPI_PHONE_ID:-}
+      MAYTAPI_TO_NUMBERS: ${MAYTAPI_TO_NUMBERS:-}
+      REPORT_CRON: ${REPORT_CRON:-}
+      REPORT_CRON_HOUR: ${REPORT_CRON_HOUR:-6}
+      REPORT_CRON_MINUTE: ${REPORT_CRON_MINUTE:-15}
+      REPORT_STATE_DIR: /app/state
+      CRON_SECRET: ${CRON_SECRET:-}
+    volumes:
+      - report-state:/app/state
     restart: unless-stopped
     healthcheck:
       test:
@@ -28,3 +39,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+volumes:
+  report-state:

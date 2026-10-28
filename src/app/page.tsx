@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, ColumnChart, MarkLabel, formatKg } from "./Charts";
+import { ReportPanel } from "./ReportPanel";
 import {
   dateKey,
   defaultDateRange,
@@ -42,6 +43,7 @@ export default function Page() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [setup, setSetup] = useState(false);
+  const [report, setReport] = useState(false);
   const [topic, setTopic] = useState<Topic>("warehouse");
   const [view, setView] = useState<View>("charts");
   const defaults = defaultDateRange();
@@ -155,6 +157,9 @@ export default function Page() {
           <img src="/karam-logo.svg" alt="KARAM AL ARAB" />
         </a>
         <div className="topbar-actions">
+          <button className="ghost" type="button" onClick={() => setReport((v) => !v)}>
+            {report ? "إخفاء التقرير" : "تقرير المدير"}
+          </button>
           <button className="ghost" type="button" onClick={() => setSetup((v) => !v)}>
             {setup ? "Hide setup" : "Setup"}
           </button>
@@ -168,6 +173,10 @@ export default function Page() {
         <p className="who">Live operations</p>
         <h1>{data?.headline ?? "Reading the live sheet…"}</h1>
       </header>
+
+      {report ? (
+        <ReportPanel data={data} url={url} sheet={sheet} from={from} to={to} />
+      ) : null}
 
       {setup ? (
         <section className="setup">

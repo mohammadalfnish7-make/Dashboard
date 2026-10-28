@@ -27,6 +27,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/data ./data
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+RUN mkdir -p /app/state && chown nextjs:nodejs /app/state
+
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]

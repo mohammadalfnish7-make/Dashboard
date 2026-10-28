@@ -265,6 +265,80 @@ input {
   border-radius: 12px;
 }
 
+.report {
+  font-family: var(--font-ar), Montserrat, sans-serif;
+}
+
+.report form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+}
+
+.report form input {
+  flex: none;
+  width: 100%;
+}
+
+.report-lead,
+.report-empty {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.phone-list,
+.send-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phone-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  background: #eef4ff;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+}
+
+.phone-list li button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.report-preview {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  background: #f7faff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  white-space: pre-wrap;
+  font-family: var(--font-ar), Montserrat, sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  max-height: 280px;
+  overflow: auto;
+}
+
+.send-results li {
+  font-size: 13px;
+}
+
+.send-results .ok {
+  color: var(--good);
+}
+
+.send-results .fail {
+  color: #dc3545;
+}
+
 .warn {
   margin: 8px 0 0;
   color: #dc3545;
@@ -810,6 +884,10 @@ svg {
 
   .setup input {
     flex: 1 1 100%;
+  }
+
+  .report form {
+    grid-template-columns: 1fr;
   }
 }
 
