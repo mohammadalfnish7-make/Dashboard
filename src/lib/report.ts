@@ -1,51 +1,141 @@
+import { parseLang, type ReportLang } from "@/lib/i18n";
 import type { SheetPayload, SheetRow } from "@/lib/types";
 
-const MONTHS_AR = [
-  "يناير",
-  "فبراير",
-  "مارس",
-  "أبريل",
-  "مايو",
-  "يونيو",
-  "يوليو",
-  "أغسطس",
-  "سبتمبر",
-  "أكتوبر",
-  "نوفمبر",
-  "ديسمبر",
-];
+const MONTHS = {
+  ar: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  ru: ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
+} as const;
 
-export function formatKgAr(value: number): string {
-  if (value >= 1000) return `${(value / 1000).toFixed(1)} طن`;
-  return `${Math.round(value)} كجم`;
+const COPY = {
+  ar: {
+    title: "كرام العرب — تقرير العمليات",
+    lastEntry: "آخر إدخال في الشيت",
+    received: "الوارد",
+    lines: "سطر",
+    shipments: "شحنة",
+    sea: "بحري",
+    air: "جوي",
+    delivered: "تم التسليم",
+    open: "لا يزال مفتوحاً",
+    warehouse: "في المستودع (يحتاج إجراء)",
+    cartons: "كرتون",
+    topWarehouse: "الأكبر في المستودع",
+    loading: "قيد التحميل",
+    noShipment: "بدون رقم شحنة",
+    inTransit: "في الطريق (ليس مشكلة مستودع)",
+    stage3: "مرحلة 3",
+    note: (date: string, kg: string) =>
+      `ملاحظة: لا يوجد تسليم مسجّل اعتباراً من ${date} (${kg} وردت منذ ذلك التاريخ). قد يكون تأخيراً بحرياً طبيعياً، أو الشيت غير محدّث.`,
+    need: "المطلوب",
+    askLoad: (names: string) => `تأكيد موعد انتهاء تحميل ${names}`,
+    askWh: (kg: string) => `تفريغ / حجز ${kg} في المستودع`,
+    askSheet: "التأكد إن كانت تسليمات لاحقة حصلت ولم تُكتب في الشيت",
+    empty: "لا توجد أسطر في هذه الفترة.",
+    emptyHint: "آخر يوم في الشيت قد يكون أقدم من الفترة المختارة.",
+    currentLoad: "الحاوية الحالية",
+    ton: "طن",
+    kg: "كجم",
+    listJoin: "، ",
+    pct: "٪",
+  },
+  en: {
+    title: "KARAM AL ARAB — operations report",
+    lastEntry: "Last sheet entry",
+    received: "Received",
+    lines: "lines",
+    shipments: "shipments",
+    sea: "Sea",
+    air: "Air",
+    delivered: "Delivered",
+    open: "Still open",
+    warehouse: "In warehouse (needs action)",
+    cartons: "cartons",
+    topWarehouse: "Biggest in warehouse",
+    loading: "Loading now",
+    noShipment: "no shipment no.",
+    inTransit: "On the way (not a warehouse problem)",
+    stage3: "Stage 3",
+    note: (date: string, kg: string) =>
+      `Note: no delivery recorded from ${date} (${kg} received since then). This may be normal sea transit, or the sheet is not updated.`,
+    need: "Need from you",
+    askLoad: (names: string) => `Confirm loading finish date for ${names}`,
+    askWh: (kg: string) => `Clear / book ${kg} in the warehouse`,
+    askSheet: "Confirm whether later deliveries happened but were not written in the sheet",
+    empty: "No lines in this period.",
+    emptyHint: "The last day in the sheet may be older than this date range.",
+    currentLoad: "the current container",
+    ton: "t",
+    kg: "kg",
+    listJoin: ", ",
+    pct: "%",
+  },
+  ru: {
+    title: "КАРАМ АЛЬ АРАБ — операционный отчёт",
+    lastEntry: "Последняя запись в таблице",
+    received: "Поступило",
+    lines: "строк",
+    shipments: "отгрузок",
+    sea: "Море",
+    air: "Авиа",
+    delivered: "Доставлено",
+    open: "Ещё открыто",
+    warehouse: "На складе (нужно действие)",
+    cartons: "коробок",
+    topWarehouse: "Крупнейшие на складе",
+    loading: "Идёт погрузка",
+    noShipment: "без номера отгрузки",
+    inTransit: "В пути (не склад)",
+    stage3: "Этап 3",
+    note: (date: string, kg: string) =>
+      `Примечание: нет зафиксированной доставки с ${date} (с тех пор поступило ${kg}). Это может быть обычная морская задержка или таблица не обновлена.`,
+    need: "Нужно от вас",
+    askLoad: (names: string) => `Подтвердить дату окончания погрузки ${names}`,
+    askWh: (kg: string) => `Разгрузить / забронировать ${kg} на складе`,
+    askSheet: "Проверить, были ли поздние доставки, которые не записаны в таблице",
+    empty: "Нет строк за этот период.",
+    emptyHint: "Последний день в таблице может быть раньше выбранного периода.",
+    currentLoad: "текущего контейнера",
+    ton: "т",
+    kg: "кг",
+    listJoin: ", ",
+    pct: "%",
+  },
+} as const;
+
+function formatKg(value: number, lang: ReportLang): string {
+  const t = COPY[lang];
+  if (value >= 1000) return `${(value / 1000).toFixed(1)} ${t.ton}`;
+  return `${Math.round(value)} ${t.kg}`;
 }
 
-function prettyIsoAr(iso: string): string {
+function prettyIso(iso: string, lang: ReportLang): string {
   const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return iso;
   const month = Number(match[2]);
   if (month < 1 || month > 12) return iso;
-  return `${Number(match[3])} ${MONTHS_AR[month - 1]} ${match[1]}`;
+  return `${Number(match[3])} ${MONTHS[lang][month - 1]} ${match[1]}`;
 }
 
-export function formatRangeAr(from: string, to: string): string {
+function formatRange(from: string, to: string, lang: ReportLang): string {
   const start = from.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const end = to.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!start || !end) return `${from} – ${to}`;
   const startMonth = Number(start[2]);
   const endMonth = Number(end[2]);
   if (start[1] === end[1] && startMonth === endMonth) {
-    return `${Number(start[3])}–${Number(end[3])} ${MONTHS_AR[endMonth - 1]} ${end[1]}`;
+    return `${Number(start[3])}–${Number(end[3])} ${MONTHS[lang][endMonth - 1]} ${end[1]}`;
   }
   if (start[1] === end[1]) {
-    return `${Number(start[3])} ${MONTHS_AR[startMonth - 1]} – ${Number(end[3])} ${MONTHS_AR[endMonth - 1]} ${end[1]}`;
+    return `${Number(start[3])} ${MONTHS[lang][startMonth - 1]} – ${Number(end[3])} ${MONTHS[lang][endMonth - 1]} ${end[1]}`;
   }
-  return `${prettyIsoAr(from)} – ${prettyIsoAr(to)}`;
+  return `${prettyIso(from, lang)} – ${prettyIso(to, lang)}`;
 }
 
-function laneAr(label: string): string {
-  if (/air/i.test(label)) return "جوي";
-  if (/sea/i.test(label)) return "بحري";
+function laneName(label: string, lang: ReportLang): string {
+  const t = COPY[lang];
+  if (/air/i.test(label)) return t.air;
+  if (/sea/i.test(label)) return t.sea;
   return label;
 }
 
@@ -75,8 +165,7 @@ function deliveryStall(payload: SheetPayload): { from: string; kg: number; rows:
   for (let i = 0; i < days.length; i += 1) {
     if (days[i].deliveries > 0) lastDelivered = i;
   }
-  const start = lastDelivered + 1;
-  const tail = days.slice(start).filter((day) => day.rows > 0);
+  const tail = days.slice(lastDelivered + 1).filter((day) => day.rows > 0);
   if (!tail.length) return null;
   return {
     from: tail[0].key,
@@ -85,109 +174,83 @@ function deliveryStall(payload: SheetPayload): { from: string; kg: number; rows:
   };
 }
 
-export function buildManagerMessage(payload: SheetPayload): string {
+export function buildManagerMessage(payload: SheetPayload, language: ReportLang | string = "ar"): string {
+  const lang = parseLang(language);
+  const t = COPY[lang];
   if (!payload.usedRows) {
-    return [
-      "كرام العرب — تقرير العمليات",
-      formatRangeAr(payload.from, payload.to),
-      "",
-      "لا توجد أسطر في هذه الفترة.",
-      payload.metrics.byDay.length
-        ? ""
-        : "آخر يوم في الشيت قد يكون أقدم من الفترة المختارة.",
-    ]
-      .filter((line) => line !== undefined)
-      .join("\n")
-      .trim();
+    return [t.title, formatRange(payload.from, payload.to, lang), "", t.empty, payload.metrics.byDay.length ? "" : t.emptyHint]
+      .filter(Boolean)
+      .join("\n");
   }
 
   const m = payload.metrics;
   const wh = m.warehouse;
   const lastDay = lastSheetDay(payload);
-  const lines: string[] = [
-    "كرام العرب — تقرير العمليات",
-    formatRangeAr(payload.from, payload.to),
-  ];
+  const lines: string[] = [t.title, formatRange(payload.from, payload.to, lang)];
   if (lastDay && lastDay < payload.to) {
-    lines.push(`آخر إدخال في الشيت: ${prettyIsoAr(lastDay)}`);
+    lines.push(`${t.lastEntry}: ${prettyIso(lastDay, lang)}`);
   }
   lines.push("");
-  lines.push(
-    `الوارد: ${formatKgAr(m.totalKg)}  ·  ${payload.usedRows} سطر  ·  ${m.shipments} شحنة`,
-  );
+  lines.push(`${t.received}: ${formatKg(m.totalKg, lang)}  ·  ${payload.usedRows} ${t.lines}  ·  ${m.shipments} ${t.shipments}`);
   if (m.byLane.length) {
-    lines.push(m.byLane.map((lane) => `${laneAr(lane.label)} ${formatKgAr(lane.kg)}`).join("  |  "));
+    lines.push(m.byLane.map((lane) => `${laneName(lane.label, lang)} ${formatKg(lane.kg, lang)}`).join("  |  "));
   }
   lines.push("");
   const pct = payload.usedRows ? Math.round((m.deliveries / payload.usedRows) * 100) : 0;
-  lines.push(`تم التسليم: ${m.deliveries} سطر (${pct}٪)`);
-  lines.push(`لا يزال مفتوحاً: ${m.open} سطر`);
+  lines.push(`${t.delivered}: ${m.deliveries} ${t.lines} (${pct}${t.pct})`);
+  lines.push(`${t.open}: ${m.open} ${t.lines}`);
 
   if (wh.lines) {
     lines.push("");
-    lines.push("في المستودع (يحتاج إجراء)");
-    lines.push(
-      `${formatKgAr(wh.kg)}  ·  ${wh.lines} سطر  ·  ${Math.round(wh.cartons)} كرتون`,
-    );
+    lines.push(t.warehouse);
+    lines.push(`${formatKg(wh.kg, lang)}  ·  ${wh.lines} ${t.lines}  ·  ${Math.round(wh.cartons)} ${t.cartons}`);
     if (wh.byLane.length) {
-      lines.push(wh.byLane.map((lane) => `${laneAr(lane.label)} ${formatKgAr(lane.kg)}`).join("  |  "));
+      lines.push(wh.byLane.map((lane) => `${laneName(lane.label, lang)} ${formatKg(lane.kg, lang)}`).join("  |  "));
     }
     const topWh = wh.marks.filter((item) => item.label !== "Other").slice(0, 3);
     if (topWh.length) {
-      lines.push("الأكبر في المستودع:");
-      for (const item of topWh) {
-        lines.push(`• ${item.label} — ${formatKgAr(item.kg)}`);
-      }
+      lines.push(`${t.topWarehouse}:`);
+      for (const item of topWh) lines.push(`• ${item.label} — ${formatKg(item.kg, lang)}`);
     }
   }
 
   const loading = payload.rows.filter((row) => /load/i.test(row.status));
   if (loading.length) {
-    const ships = groupKg(loading, (row) => row.shipment || "بدون رقم شحنة").slice(0, 4);
+    const ships = groupKg(loading, (row) => row.shipment || t.noShipment).slice(0, 4);
     lines.push("");
-    lines.push("قيد التحميل");
+    lines.push(t.loading);
     for (const ship of ships) {
-      lines.push(`• ${ship.label} — ${formatKgAr(ship.kg)} / ${ship.rows} سطر`);
+      lines.push(`• ${ship.label} — ${formatKg(ship.kg, lang)} / ${ship.rows} ${t.lines}`);
     }
   }
 
   const stage3 = payload.rows.filter((row) => /stage\s*3|этап\s*3/i.test(row.status));
   if (stage3.length) {
-    const ships = groupKg(stage3, (row) => row.shipment || "بدون رقم شحنة").slice(0, 3);
+    const ships = groupKg(stage3, (row) => row.shipment || t.noShipment).slice(0, 3);
     const kg = stage3.reduce((sum, row) => sum + (row.kg ?? 0), 0);
     lines.push("");
-    lines.push("في الطريق (ليس مشكلة مستودع)");
-    lines.push(`مرحلة 3: ${formatKgAr(kg)} / ${stage3.length} سطر`);
-    for (const ship of ships) {
-      lines.push(`• ${ship.label} — ${formatKgAr(ship.kg)}`);
-    }
+    lines.push(t.inTransit);
+    lines.push(`${t.stage3}: ${formatKg(kg, lang)} / ${stage3.length} ${t.lines}`);
+    for (const ship of ships) lines.push(`• ${ship.label} — ${formatKg(ship.kg, lang)}`);
   }
 
   const stall = deliveryStall(payload);
   if (stall) {
     lines.push("");
-    lines.push(
-      `ملاحظة: لا يوجد تسليم مسجّل اعتباراً من ${prettyIsoAr(stall.from)} (${formatKgAr(stall.kg)} وردت منذ ذلك التاريخ). قد يكون تأخيراً بحرياً طبيعياً، أو الشيت غير محدّث.`,
-    );
+    lines.push(t.note(prettyIso(stall.from, lang), formatKg(stall.kg, lang)));
   }
 
   const asks: string[] = [];
   if (loading.length) {
     const names = [...new Set(loading.map((row) => row.shipment).filter(Boolean))];
-    asks.push(`تأكيد موعد انتهاء تحميل ${names.slice(0, 3).join("، ") || "الحاوية الحالية"}`);
+    asks.push(t.askLoad(names.slice(0, 3).join(t.listJoin) || t.currentLoad));
   }
-  if (wh.lines) {
-    asks.push(`تفريغ / حجز ${formatKgAr(wh.kg)} في المستودع`);
-  }
-  if (stall) {
-    asks.push("التأكد إن كانت تسليمات لاحقة حصلت ولم تُكتب في الشيت");
-  }
+  if (wh.lines) asks.push(t.askWh(formatKg(wh.kg, lang)));
+  if (stall) asks.push(t.askSheet);
   if (asks.length) {
     lines.push("");
-    lines.push("المطلوب:");
-    asks.forEach((ask, index) => {
-      lines.push(`${index + 1}) ${ask}`);
-    });
+    lines.push(`${t.need}:`);
+    asks.forEach((ask, index) => lines.push(`${index + 1}) ${ask}`));
   }
 
   return lines.join("\n");

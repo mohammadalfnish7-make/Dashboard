@@ -3,7 +3,7 @@ import { Montserrat, Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
 const montserrat = Montserrat({
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });

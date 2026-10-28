@@ -61,11 +61,13 @@ export async function sendWhatsAppText(to: string, message: string): Promise<May
   }
 }
 
-export async function sendWhatsAppToMany(phones: string[], message: string) {
-  const results: MaytapiSendResult[] = [];
-  for (let i = 0; i < phones.length; i += 1) {
-    results.push(await sendWhatsAppText(phones[i], message));
-    if (i < phones.length - 1) await sleep(400);
+export async function sendWhatsAppMessages(items: Array<{ phone: string; message: string; language?: string; name?: string }>) {
+  const results: Array<MaytapiSendResult & { language?: string; name?: string }> = [];
+  for (let i = 0; i < items.length; i += 1) {
+    const item = items[i];
+    const sent = await sendWhatsAppText(item.phone, item.message);
+    results.push({ ...sent, language: item.language, name: item.name });
+    if (i < items.length - 1) await sleep(400);
   }
   return results;
 }

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
+import { parseLang } from "@/lib/i18n";
 import { loadSheetPayload } from "@/lib/load-sheet";
-import { maytapiConfig, sendWhatsAppToMany } from "@/lib/maytapi";
-import { normalizePhones } from "@/lib/phone";
+import { maytapiConfig, sendWhatsAppMessages } from "@/lib/maytapi";
+import { normalizePhone } from "@/lib/phone";
 import { checkLoginRateLimit, clientKey, recordLoginFailure } from "@/lib/rate-limit";
+import { loadRecipients, MAX_NUMBERS } from "@/lib/recipients";
 import { buildManagerMessage } from "@/lib/report";
 
 export const dynamic = "force-dynamic";
 
-const MAX_NUMBERS = 20;
 const MAX_MESSAGE = 4000;
 
 export async function GET(request: Request) {
@@ -19,9 +20,11 @@ export async function GET(request: Request) {
       from: searchParams.get("from"),
       to: searchParams.get("to"),
     });
+    const language = parseLang(searchParams.get("lang"));
     return NextResponse.json({
       configured: maytapiConfig().configured,
-      message: buildManagerMessage(payload),
+      language,
+      message: buildManagerMessage(payload, language),
       rangeLabel: payload.rangeLabel,
     });
   } catch (error) {
@@ -47,24 +50,22 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { numbers?: unknown; url?: unknown; tab?: unknown; from?: unknown; to?: unknown };
+  let body: { phone?: unknown; url?: unknown; tab?: unknown; from?: unknown; to?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Send a JSON body." }, { status: 400 });
   }
 
-  const phones = normalizePhones(body.numbers);
-  if (phones.invalid.length) {
-    return NextResponse.json(
-      { error: `Invalid numbers: ${phones.invalid.join(", ")}` },
-      { status: 400 },
-    );
-  }
-  if (!phones.ok.length) {
+  const stored = loadRecipients();
+  const only = typeof body.phone === "string" ? normalizePhone(body.phone) : null;
+  const targets = only
+    ? stored.filter((item) => item.phone === only)
+    : stored;
+  if (!targets.length) {
     return NextResponse.json({ error: "Add at least one WhatsApp number." }, { status: 400 });
   }
-  if (phones.ok.length > MAX_NUMBERS) {
+  if (targets.length > MAX_NUMBERS) {
     return NextResponse.json({ error: `Maximum ${MAX_NUMBERS} numbers per send.` }, { status: 400 });
   }
 
@@ -75,15 +76,20 @@ export async function POST(request: Request) {
       from: typeof body.from === "string" ? body.from : undefined,
       to: typeof body.to === "string" ? body.to : undefined,
     });
-    const message = buildManagerMessage(payload).slice(0, MAX_MESSAGE);
     recordLoginFailure(limitKey);
-    const results = await sendWhatsAppToMany(phones.ok, message);
+    const results = await sendWhatsAppMessages(
+      targets.map((person) => ({
+        phone: person.phone,
+        name: person.name,
+        language: person.language,
+        message: buildManagerMessage(payload, person.language).slice(0, MAX_MESSAGE),
+      })),
+    );
     const sent = results.filter((item) => item.ok).length;
     return NextResponse.json({
       ok: sent === results.length,
       sent,
       failed: results.length - sent,
-      message,
       results,
     });
   } catch (error) {

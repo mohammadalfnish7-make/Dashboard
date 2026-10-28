@@ -269,15 +269,40 @@ input {
   font-family: var(--font-ar), Montserrat, sans-serif;
 }
 
-.report form {
+.report form,
+.report-add {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 1.2fr) auto auto auto;
   align-items: center;
 }
 
-.report form input {
+.report form input,
+.report form select {
   flex: none;
   width: 100%;
+}
+
+.report select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.preview-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+}
+
+.preview-langs button.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
 }
 
 .report-lead,
@@ -299,11 +324,12 @@ input {
 
 .phone-list li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 6px 6px 6px 12px;
   background: #eef4ff;
-  border-radius: var(--radius-pill);
+  border-radius: 16px;
   font-size: 14px;
 }
 
@@ -886,7 +912,8 @@ svg {
     flex: 1 1 100%;
   }
 
-  .report form {
+  .report form,
+  .report-add {
     grid-template-columns: 1fr;
   }
 }

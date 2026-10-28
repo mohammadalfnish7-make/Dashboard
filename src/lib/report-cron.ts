@@ -1,8 +1,8 @@
 import "server-only";
 import { cronConfig, cronEnabled, dubaiDateRange, dubaiNow, shouldSendDaily } from "@/lib/dubai";
 import { loadSheetPayload } from "@/lib/load-sheet";
-import { maytapiConfig, sendWhatsAppToMany } from "@/lib/maytapi";
-import { loadCronState, loadRecipientNumbers, markCronSent } from "@/lib/recipients";
+import { maytapiConfig, sendWhatsAppMessages } from "@/lib/maytapi";
+import { loadCronState, loadRecipients, markCronSent } from "@/lib/recipients";
 import { buildManagerMessage } from "@/lib/report";
 
 const INTERVAL_MS = 20_000;
@@ -13,7 +13,7 @@ type DailySendResult = {
   date?: string;
   sent?: number;
   failed?: number;
-  results?: Awaited<ReturnType<typeof sendWhatsAppToMany>>;
+  results?: Awaited<ReturnType<typeof sendWhatsAppMessages>>;
 };
 
 let sending = false;
@@ -28,15 +28,21 @@ export async function sendDailyReport(options?: { force?: boolean }): Promise<Da
   }
   if (!maytapiConfig().configured) return { skipped: "WhatsApp is not configured" };
 
-  const numbers = loadRecipientNumbers();
-  if (!numbers.length) return { skipped: "no recipient numbers" };
+  const recipients = loadRecipients();
+  if (!recipients.length) return { skipped: "no recipient numbers" };
 
   sending = true;
   try {
     const range = dubaiDateRange(30);
     const payload = await loadSheetPayload({ tab: "all", from: range.from, to: range.to });
-    const message = buildManagerMessage(payload).slice(0, MAX_MESSAGE);
-    const results = await sendWhatsAppToMany(numbers, message);
+    const results = await sendWhatsAppMessages(
+      recipients.map((person) => ({
+        phone: person.phone,
+        name: person.name,
+        language: person.language,
+        message: buildManagerMessage(payload, person.language).slice(0, MAX_MESSAGE),
+      })),
+    );
     const sent = results.filter((item) => item.ok).length;
     if (sent > 0) markCronSent(today);
     return { date: today, sent, failed: results.length - sent, results };
