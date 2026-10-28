@@ -13,7 +13,7 @@ export async function loadSheetPayload(options: {
 }): Promise<SheetPayload> {
   const range = resolveDateRange(options.from, options.to);
   const requestedUrl = (options.url ?? process.env.GOOGLE_SHEET_URL ?? "").trim();
-  const tab = options.tab;
+  const tab = options.tab ?? null;
 
   if (!requestedUrl) return loadLocalPayload(tab, range);
   if (!extractSheetId(requestedUrl)) {

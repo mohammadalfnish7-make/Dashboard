@@ -1,5 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
+import "server-only";
+import fs from "fs";
+import path from "path";
 import { normalizePhones } from "@/lib/phone";
 
 const MAX_NUMBERS = 20;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendDailyReport } from "@/lib/report-cron";
+import { sendDailyReport, startDailyReportCron } from "@/lib/report-cron";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden." }, { status: 401 });
   }
   const force = new URL(request.url).searchParams.get("force") === "1";
+  startDailyReportCron();
   try {
     const result = await sendDailyReport({ force });
     return NextResponse.json(result);

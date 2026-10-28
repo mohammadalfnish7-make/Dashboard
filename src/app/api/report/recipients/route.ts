@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cronConfig, cronEnabled, nextCronLabel } from "@/lib/dubai";
+import { startDailyReportCron } from "@/lib/report-cron";
 import { loadCronState, loadRecipientNumbers, saveRecipientNumbers } from "@/lib/recipients";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ function payload() {
 }
 
 export async function GET() {
+  startDailyReportCron();
   return NextResponse.json(payload());
 }
 

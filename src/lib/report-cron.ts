@@ -1,3 +1,4 @@
+import "server-only";
 import { cronConfig, cronEnabled, dubaiDateRange, dubaiNow, shouldSendDaily } from "@/lib/dubai";
 import { loadSheetPayload } from "@/lib/load-sheet";
 import { maytapiConfig, sendWhatsAppToMany } from "@/lib/maytapi";

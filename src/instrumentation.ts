@@ -1,6 +1,2 @@
-export async function register() {
-  if (process.env.NEXT_RUNTIME === "edge") return;
-  if (process.env.NEXT_PHASE === "phase-production-build") return;
-  const { startDailyReportCron } = await import("./lib/report-cron");
-  startDailyReportCron();
-}
+/** Cron starts from the Node health route so webpack never bundles `fs` here. */
+export async function register() {}
