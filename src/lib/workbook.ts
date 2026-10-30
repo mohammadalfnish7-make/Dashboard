@@ -120,5 +120,7 @@ export function workbookToPayload(
 }
 
 export function readWorkbook(buffer: Buffer | ArrayBuffer): XLSX.WorkBook {
-  return XLSX.read(buffer, { type: "buffer", cellDates: true });
+  // Keep date cells as Excel serials. cellDates shifts them by a timezone
+  // and hides the month/day swap corrected in formatDate.
+  return XLSX.read(buffer, { type: "buffer", cellDates: false });
 }
