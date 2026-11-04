@@ -1,19 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Montserrat, Noto_Sans_Arabic } from "next/font/google";
+import "@fontsource/montserrat/400.css";
+import "@fontsource/montserrat/500.css";
+import "@fontsource/montserrat/600.css";
+import "@fontsource/montserrat/700.css";
+import "@fontsource/montserrat/cyrillic-400.css";
+import "@fontsource/montserrat/cyrillic-500.css";
+import "@fontsource/montserrat/cyrillic-600.css";
+import "@fontsource/montserrat/cyrillic-700.css";
+import "@fontsource/noto-sans-arabic/400.css";
+import "@fontsource/noto-sans-arabic/500.css";
+import "@fontsource/noto-sans-arabic/600.css";
+import "@fontsource/noto-sans-arabic/700.css";
 import "./globals.css";
-
-const montserrat = Montserrat({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-ar",
-});
 
 export const metadata: Metadata = {
   title: "KARAM AL ARAB · Live ops",
@@ -31,7 +29,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${montserrat.className} ${notoSansArabic.variable}`}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
