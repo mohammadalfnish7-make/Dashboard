@@ -1,18 +1,12 @@
 import { parseLang, type ReportLang } from "@/lib/i18n";
 import type { SheetPayload } from "@/lib/types";
 
-const MONTHS = {
-  ar: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
-  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  ru: ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
-} as const;
-
 const COPY = {
   ar: {
     title: "كرم العرب — تقرير العمليات",
     received: "الوارد",
     lines: "سطر",
-    shipments: "تسليم",
+    deliveries: "تسليم",
     sea: "بحري",
     air: "جوي",
     warehouse: "في المستودع (يحتاج إجراء)",
@@ -27,7 +21,7 @@ const COPY = {
     title: "KARAM AL ARAB — operations report",
     received: "Received",
     lines: "lines",
-    shipments: "deliveries",
+    deliveries: "deliveries",
     sea: "Sea",
     air: "Air",
     warehouse: "In warehouse (needs action)",
@@ -42,7 +36,7 @@ const COPY = {
     title: "КАРАМ АЛЬ АРАБ — операционный отчёт",
     received: "Поступило",
     lines: "строк",
-    shipments: "доставок",
+    deliveries: "доставок",
     sea: "Море",
     air: "Авиа",
     warehouse: "На складе (нужно действие)",
@@ -61,27 +55,24 @@ function formatKg(value: number, lang: ReportLang): string {
   return `${Math.round(value)} ${t.kg}`;
 }
 
-function prettyIso(iso: string, lang: ReportLang): string {
-  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return iso;
-  const month = Number(match[2]);
-  if (month < 1 || month > 12) return iso;
-  return `${Number(match[3])} ${MONTHS[lang][month - 1]} ${match[1]}`;
-}
-
-function formatRange(from: string, to: string, lang: ReportLang): string {
+/** Sheet dates are day/month/year. Same month → (1->9 /11/ 2026). */
+export function formatReportRange(from: string, to: string): string {
   const start = from.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const end = to.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!start || !end) return `${from} – ${to}`;
+  const startDay = Number(start[3]);
+  const endDay = Number(end[3]);
   const startMonth = Number(start[2]);
   const endMonth = Number(end[2]);
-  if (start[1] === end[1] && startMonth === endMonth) {
-    return `${Number(start[3])}–${Number(end[3])} ${MONTHS[lang][endMonth - 1]} ${end[1]}`;
+  const startYear = start[1];
+  const endYear = end[1];
+  if (startYear === endYear && startMonth === endMonth) {
+    return `(${startDay}->${endDay} /${startMonth}/ ${startYear})`;
   }
-  if (start[1] === end[1]) {
-    return `${Number(start[3])} ${MONTHS[lang][startMonth - 1]} – ${Number(end[3])} ${MONTHS[lang][endMonth - 1]} ${end[1]}`;
+  if (startYear === endYear) {
+    return `(${startDay}/${startMonth} -> ${endDay}/${endMonth}/ ${endYear})`;
   }
-  return `${prettyIso(from, lang)} – ${prettyIso(to, lang)}`;
+  return `(${startDay}/${startMonth}/${startYear} -> ${endDay}/${endMonth}/${endYear})`;
 }
 
 function laneName(label: string, lang: ReportLang): string {
@@ -95,15 +86,17 @@ export function buildManagerMessage(payload: SheetPayload, language: ReportLang 
   const lang = parseLang(language);
   const t = COPY[lang];
   if (!payload.usedRows) {
-    return [t.title, formatRange(payload.from, payload.to, lang), "", t.empty, payload.metrics.byDay.length ? "" : t.emptyHint]
+    return [t.title, formatReportRange(payload.from, payload.to), "", t.empty, payload.metrics.byDay.length ? "" : t.emptyHint]
       .filter(Boolean)
       .join("\n");
   }
 
   const m = payload.metrics;
   const wh = m.warehouse;
-  const lines: string[] = [t.title, formatRange(payload.from, payload.to, lang), ""];
-  lines.push(`${t.received}: ${formatKg(m.totalKg, lang)}  ·  ${payload.usedRows} ${t.lines}  ·  ${m.shipments} ${t.shipments}`);
+  const lines: string[] = [t.title, formatReportRange(payload.from, payload.to), ""];
+  lines.push(
+    `${t.received}: ${formatKg(m.totalKg, lang)}  ·  ${payload.usedRows} ${t.lines}  ·  ${m.deliveries} ${t.deliveries}`,
+  );
   if (m.byLane.length) {
     lines.push(m.byLane.map((lane) => `${laneName(lane.label, lang)} ${formatKg(lane.kg, lang)}`).join("  |  "));
   }

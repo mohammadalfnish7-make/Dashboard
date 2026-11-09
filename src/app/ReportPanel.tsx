@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { langLabel, parseLang, REPORT_LANGS, type ReportLang, type ReportRecipient } from "@/lib/i18n";
 import { normalizePhone } from "@/lib/phone";
 import { buildManagerMessage } from "@/lib/report";
@@ -48,14 +48,10 @@ export function ReportPanel({
   data,
   url,
   sheet,
-  from,
-  to,
 }: {
   data: SheetPayload | null;
   url: string;
   sheet: string;
-  from: string;
-  to: string;
 }) {
   const [people, setPeople] = useState<ReportRecipient[]>([]);
   const [cron, setCron] = useState<CronInfo | null>(null);
@@ -63,6 +59,8 @@ export function ReportPanel({
   const [draft, setDraft] = useState("");
   const [draftLang, setDraftLang] = useState<ReportLang>("ar");
   const [previewLang, setPreviewLang] = useState<ReportLang>("ar");
+  const [previewText, setPreviewText] = useState("");
+  const [rangeLabel, setRangeLabel] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -71,6 +69,12 @@ export function ReportPanel({
   useEffect(() => {
     void loadRecipients();
   }, []);
+
+  useEffect(() => {
+    void loadPreview(previewLang);
+    // Preview always uses month-to-date on the server; refresh when sheet/url/lang change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, sheet, previewLang]);
 
   async function loadRecipients() {
     try {
@@ -118,11 +122,23 @@ export function ReportPanel({
     }
   }
 
-  const preview = useMemo(
-    () => (data ? buildManagerMessage(data, previewLang) : ""),
-    [data, previewLang],
-  );
   const clock = cron ? `${cron.hour}:${String(cron.minute).padStart(2, "0")}` : "6:15";
+
+  async function loadPreview(lang: ReportLang) {
+    try {
+      const params = new URLSearchParams({ lang, tab: sheet || "all" });
+      if (url) params.set("url", url);
+      const res = await fetch(`/api/report?${params.toString()}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "تعذر بناء التقرير.");
+      setPreviewText(typeof json.message === "string" ? json.message : "");
+      setRangeLabel(typeof json.rangeLabel === "string" ? json.rangeLabel : "");
+    } catch (err) {
+      // Fall back to whatever sheet data is on screen if the preview endpoint fails.
+      setPreviewText(data ? buildManagerMessage(data, lang) : "");
+      setError(err instanceof Error ? err.message : "تعذر بناء التقرير.");
+    }
+  }
 
   function addPhone(event: FormEvent) {
     event.preventDefault();
@@ -156,13 +172,12 @@ export function ReportPanel({
           phone,
           url,
           tab: sheet,
-          from,
-          to,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "تعذر إرسال التقرير.");
       setResults(json.results ?? []);
+      if (typeof json.rangeLabel === "string") setRangeLabel(json.rangeLabel);
     } catch (err) {
       setError(err instanceof Error ? err.message : "تعذر إرسال التقرير.");
     } finally {
@@ -173,7 +188,9 @@ export function ReportPanel({
   return (
     <section className="setup report" dir="rtl" lang="ar">
       <p className="report-lead">
-        يُرسل تلقائياً كل يوم الساعة {clock} صباحاً بتوقيت دبي. كل رقم يستلم التقرير بلغته: كرام إنجليزي، صدام عربي أو روسي.
+        {`التقرير من أول الشهر حتى اليوم (مثلاً (1->9 /11/ 2026)، وغداً (1->10 /11/ 2026)). يُرسل تلقائياً كل يوم الساعة ${clock} صباحاً بتوقيت دبي.`}
+        كل رقم يستلم التقرير بلغته: كرام إنجليزي، صدام عربي أو روسي.
+        {rangeLabel ? ` · الفترة: ${rangeLabel}` : ""}
         {cron?.nextLabel ? ` · التالي: ${cron.nextLabel}` : ""}
         {cron?.lastSentDate ? ` · آخر إرسال: ${cron.lastSentDate}` : ""}
         {cron && !cron.enabled ? " · الجدولة متوقفة على هذا السيرفر" : ""}
@@ -281,9 +298,9 @@ export function ReportPanel({
           </button>
         ))}
       </div>
-      {preview ? (
+      {previewText ? (
         <pre className="report-preview" aria-label="نص التقرير" dir={previewLang === "ar" ? "rtl" : "ltr"}>
-          {preview}
+          {previewText}
         </pre>
       ) : null}
       {error ? <p className="warn">{error}</p> : null}

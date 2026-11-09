@@ -1,5 +1,5 @@
 import "server-only";
-import { cronConfig, cronEnabled, dubaiDateRange, dubaiNow, shouldSendDaily } from "@/lib/dubai";
+import { cronConfig, cronEnabled, dubaiMonthToDate, dubaiNow, shouldSendDaily } from "@/lib/dubai";
 import { loadSheetPayload } from "@/lib/load-sheet";
 import { maytapiConfig, sendWhatsAppMessages } from "@/lib/maytapi";
 import { loadCronState, loadRecipients, markCronSent } from "@/lib/recipients";
@@ -33,7 +33,7 @@ export async function sendDailyReport(options?: { force?: boolean }): Promise<Da
 
   sending = true;
   try {
-    const range = dubaiDateRange(30);
+    const range = dubaiMonthToDate();
     const payload = await loadSheetPayload({ tab: "all", from: range.from, to: range.to });
     const results = await sendWhatsAppMessages(
       recipients.map((person) => ({

@@ -42,6 +42,14 @@ export function dubaiDateRange(days = 30): { from: string; to: string } {
   return { from: start.toISOString().slice(0, 10), to };
 }
 
+/** From the 1st of the current Dubai month through today. */
+export function dubaiMonthToDate(): { from: string; to: string } {
+  const to = dubaiNow().date;
+  const [year, month] = to.split("-").map(Number);
+  const from = `${year}-${String(month).padStart(2, "0")}-01`;
+  return { from, to };
+}
+
 /** Send once in the 06:15–06:59 Dubai window. No late catch-up after 07:00. */
 export function shouldSendDaily(now = new Date(), lastSentDate: string | null) {
   const current = dubaiNow(now);

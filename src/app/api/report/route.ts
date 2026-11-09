@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { dubaiMonthToDate } from "@/lib/dubai";
 import { parseLang } from "@/lib/i18n";
 import { loadSheetPayload } from "@/lib/load-sheet";
 import { maytapiConfig, sendWhatsAppMessages } from "@/lib/maytapi";
 import { normalizePhone } from "@/lib/phone";
 import { checkLoginRateLimit, clientKey, recordLoginFailure } from "@/lib/rate-limit";
 import { loadRecipients, MAX_NUMBERS } from "@/lib/recipients";
-import { buildManagerMessage } from "@/lib/report";
+import { buildManagerMessage, formatReportRange } from "@/lib/report";
 
 export const dynamic = "force-dynamic";
 
@@ -13,19 +14,22 @@ const MAX_MESSAGE = 4000;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const range = dubaiMonthToDate();
   try {
     const payload = await loadSheetPayload({
       url: searchParams.get("url"),
       tab: searchParams.get("tab"),
-      from: searchParams.get("from"),
-      to: searchParams.get("to"),
+      from: range.from,
+      to: range.to,
     });
     const language = parseLang(searchParams.get("lang"));
     return NextResponse.json({
       configured: maytapiConfig().configured,
       language,
       message: buildManagerMessage(payload, language),
-      rangeLabel: payload.rangeLabel,
+      rangeLabel: formatReportRange(range.from, range.to),
+      from: range.from,
+      to: range.to,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to build report.";
@@ -50,7 +54,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { phone?: unknown; url?: unknown; tab?: unknown; from?: unknown; to?: unknown };
+  let body: { phone?: unknown; url?: unknown; tab?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -69,12 +73,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Maximum ${MAX_NUMBERS} numbers per send.` }, { status: 400 });
   }
 
+  const range = dubaiMonthToDate();
   try {
     const payload = await loadSheetPayload({
       url: typeof body.url === "string" ? body.url : undefined,
       tab: typeof body.tab === "string" ? body.tab : "all",
-      from: typeof body.from === "string" ? body.from : undefined,
-      to: typeof body.to === "string" ? body.to : undefined,
+      from: range.from,
+      to: range.to,
     });
     recordLoginFailure(limitKey);
     const results = await sendWhatsAppMessages(
@@ -91,6 +96,9 @@ export async function POST(request: Request) {
       sent,
       failed: results.length - sent,
       results,
+      from: range.from,
+      to: range.to,
+      rangeLabel: formatReportRange(range.from, range.to),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to send report.";

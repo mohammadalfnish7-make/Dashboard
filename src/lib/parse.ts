@@ -18,7 +18,8 @@ const MARK_HEADERS = [
 const MARK_FALLBACK = ["info / инфо", "info"];
 /** Load-plan Customer column: mark codes (4455, EM5565, MO001). */
 const CUSTOMER_HEADERS = ["customer"];
-const KG_HEADERS = ["net weight", "kgs", "wt(kg)", "gross weight"];
+/** Prefer Gross Weight — matches how received is summed in the load-plan sheet. */
+const KG_HEADERS = ["gross weight", "kgs", "wt(kg)", "net weight"];
 const CARTON_HEADERS = ["number of cartons", "carton", "crtn", "cartons"];
 const STATUS_HEADERS = ["status", "stage", "comment"];
 

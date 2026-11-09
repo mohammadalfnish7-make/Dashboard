@@ -175,7 +175,7 @@ export default function Page() {
       </header>
 
       {report ? (
-        <ReportPanel data={data} url={url} sheet={sheet} from={from} to={to} />
+        <ReportPanel data={data} url={url} sheet={sheet} />
       ) : null}
 
       {setup ? (
