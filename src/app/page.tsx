@@ -9,9 +9,12 @@ import {
   fillWorkingDays,
   monthRange,
   canShiftNext,
+  shiftDay,
   shiftMonth,
   shiftWeek,
+  todayRange,
   weekRange,
+  yesterdayRange,
 } from "@/lib/parse";
 import type { SheetPayload, SheetRow } from "@/lib/types";
 
@@ -34,7 +37,7 @@ const TOPICS = [
 
 type Topic = (typeof TOPICS)[number]["id"];
 type View = "charts" | "details";
-type Period = "custom" | "month" | "week";
+type Period = "custom" | "month" | "week" | "day";
 
 export default function Page() {
   const [url, setUrl] = useState("");
@@ -129,7 +132,23 @@ export default function Page() {
     applyRange(next.from, next.to, "week");
   }
 
+  function applyToday() {
+    const next = todayRange();
+    applyRange(next.from, next.to, "day");
+  }
+
+  function applyYesterday() {
+    const next = yesterdayRange();
+    applyRange(next.from, next.to, "day");
+  }
+
   function shiftPeriod(delta: number) {
+    if (period === "day") {
+      if (delta > 0 && !canShiftNext("day", from)) return;
+      const next = shiftDay(from, delta);
+      applyRange(next.from, next.to, "day");
+      return;
+    }
     if (period === "week") {
       if (delta > 0 && !canShiftNext("week", from)) return;
       const next = shiftWeek(from, delta);
@@ -143,8 +162,10 @@ export default function Page() {
     }
   }
 
+  const today = todayRange().from;
+  const yesterday = yesterdayRange().from;
   const nextEnabled =
-    (period === "week" || period === "month") && canShiftNext(period, from);
+    (period === "week" || period === "month" || period === "day") && canShiftNext(period, from);
 
   const when = data
     ? `${data.rangeLabel} · ${data.usedRows} lines · ${laneLabel(data.tab)} · ${data.source === "google" ? "live" : "file"}`
@@ -234,24 +255,44 @@ export default function Page() {
         <button type="button" onClick={resetLast30}>
           Last 30 days
         </button>
-        <span className="grain" role="group" aria-label="By month or week">
-          <button type="button" className={period === "month" ? "active" : undefined} onClick={applyMonth}>
-            Month
+        <span className="grain" role="group" aria-label="By day, week, or month">
+          <button
+            type="button"
+            className={period === "day" && from === today ? "active" : undefined}
+            onClick={applyToday}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            className={period === "day" && from === yesterday ? "active" : undefined}
+            onClick={applyYesterday}
+          >
+            Yesterday
           </button>
           <button type="button" className={period === "week" ? "active" : undefined} onClick={applyWeek}>
             Week
           </button>
+          <button type="button" className={period === "month" ? "active" : undefined} onClick={applyMonth}>
+            Month
+          </button>
         </span>
-        {period === "month" || period === "week" ? (
+        {period === "month" || period === "week" || period === "day" ? (
           <span className="grain-nav">
-            <button type="button" onClick={() => shiftPeriod(-1)} aria-label={period === "week" ? "Previous week" : "Previous month"}>
+            <button
+              type="button"
+              onClick={() => shiftPeriod(-1)}
+              aria-label={
+                period === "day" ? "Previous day" : period === "week" ? "Previous week" : "Previous month"
+              }
+            >
               Previous
             </button>
             <button
               type="button"
               onClick={() => shiftPeriod(1)}
               disabled={!nextEnabled}
-              aria-label={period === "week" ? "Next week" : "Next month"}
+              aria-label={period === "day" ? "Next day" : period === "week" ? "Next week" : "Next month"}
             >
               Next
             </button>

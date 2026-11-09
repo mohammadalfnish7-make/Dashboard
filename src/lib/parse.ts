@@ -294,6 +294,21 @@ export function weekRange(anchor: Date = new Date()): { from: string; to: string
   return { from: isoDate(monday), to: clampToToday(isoDate(saturday)) };
 }
 
+export function dayRange(anchor: Date = new Date()): { from: string; to: string } {
+  const day = clampToToday(isoDate(anchor));
+  return { from: day, to: day };
+}
+
+export function todayRange(): { from: string; to: string } {
+  return dayRange(new Date());
+}
+
+export function yesterdayRange(): { from: string; to: string } {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return dayRange(date);
+}
+
 export function shiftMonth(from: string, delta: number): { from: string; to: string } {
   const date = parseLocal(from);
   const next = monthRange(new Date(date.getFullYear(), date.getMonth() + delta, 1));
@@ -315,9 +330,21 @@ export function shiftWeek(from: string, delta: number): { from: string; to: stri
   return next;
 }
 
-/** True when Next would leave the current week/month that contains today. */
-export function canShiftNext(period: "month" | "week", from: string): boolean {
-  const current = period === "week" ? weekRange() : monthRange();
+export function shiftDay(from: string, delta: number): { from: string; to: string } {
+  const date = parseLocal(from);
+  date.setDate(date.getDate() + delta);
+  const next = dayRange(date);
+  if (delta > 0) {
+    const current = todayRange();
+    if (next.from > current.from) return current;
+  }
+  return next;
+}
+
+/** True when Next would leave the current day/week/month that contains today. */
+export function canShiftNext(period: "month" | "week" | "day", from: string): boolean {
+  const current =
+    period === "week" ? weekRange() : period === "day" ? todayRange() : monthRange();
   return from < current.from;
 }
 
